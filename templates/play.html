@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ APP_NAME }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg">
+  <div class="wrap">
+    <div class="title">
+      <h1 class="m0">{{ APP_NAME }}</h1>
+      <span class="badge">Aluno · {{ std_id }}</span>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <p class="muted m0">{{ description }}</p>
+    </div>
+
+    <div class="card">
+      <h3 class="muted m0">Heróis</h3>
+      <div class="pool" id="pool">
+        {% for h in heroes %}
+          <div class="hero" draggable="true" data-universe="{{ h.universe }}">{{ h.name }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="board">
+        <div class="panel card">
+          <h3>Marvel</h3>
+          <div class="dropzone" id="zone-marvel"></div>
+        </div>
+        <div class="panel card">
+          <h3>DC</h3>
+          <div class="dropzone" id="zone-dc"></div>
+        </div>
+      </div>
+
+      <div class="metrics" id="metrics"></div>
+      <div class="controls mt8">
+        <button id="resetBtn">Reset</button>
+        <button id="hintBtn">Dica</button>
+      </div>
+      {% if enable_hints %}
+        <div id="hintBox" class="muted mt6">Dica rápida: DC tem Justice League e Marvel tem Avengers</div>
+      {% endif %}
+    </div>
+
+    <div class="card mt16">
+      <h3 class="muted m0">Notas</h3>
+      <p class="muted" style="margin:0 0 6px">Regista uma breve nota sobre a tua estratégia ou onde tiveste mais dúvidas.</p>
+      <textarea id="sessionSummary" placeholder="Ex.: confundi-me mais com heróis da Justice League vs Avengers..."></textarea>
+    </div>
+
+    <div class="card mt16">
+      <h3 class="muted m0">Scoreboard (Top 5)</h3>
+      <div id="scoreboard" class="muted">Sem dados ainda…</div>
+    </div>
+  </div>
+
+  <script>
+    let correct = 0, wrong = 0, attempts = 0, resets = 0;
+    let confusedMarvel = 0, confusedDC = 0;
+    const start = Date.now();
+    const zones = {"Marvel": document.getElementById('zone-marvel'), "DC": document.getElementById('zone-dc')};
+    const metrics = document.getElementById('metrics');
+    const hintBtn = document.getElementById('hintBtn');
+    const hintBox = document.getElementById('hintBox');
+    const resetBtn = document.getElementById('resetBtn');
+    const pool = document.getElementById('pool');
+    const sessionSummary = document.getElementById('sessionSummary');
+
+    function updateMetrics() {
+      const seconds = Math.floor((Date.now() - start)/1000);
+      metrics.innerHTML = [
+        "<span class='pill'>Corretos: " + correct + "</span>",
+        "<span class='pill'>Errados: " + wrong + "</span>",
+        "<span class='pill'>Tentativas: " + attempts + "</span>",
+        "<span class='pill'>Tempo: " + seconds + "s</span>",
+        "<span class='pill'>Resets: " + resets + "</span>"
+      ].join(" ");
+      const mostConfused = confusedMarvel > confusedDC ? "Marvel" : (confusedDC > confusedMarvel ? "DC" : "");
+
+      const payload = {
+        activityID: "{{ activity_id }}",
+        inveniraStdID: "{{ std_id }}",
+        metrics: { correct_count: correct, wrong_count: wrong, attempts: attempts, time_spent: seconds },
+        qual: { most_confused_universe: mostConfused, session_summary: sessionSummary.value || "" }
+      };
+      navigator.sendBeacon("/track", JSON.stringify(payload));
+    }
+
+    async function refreshScoreboard() {
+      try {
+        const resp = await fetch(`/scoreboard?activityID=${encodeURIComponent("{{ activity_id }}")}`);
+        const data = await resp.json();
+        const el = document.getElementById('scoreboard');
+        if (!data.top || data.top.length === 0) { el.textContent = "Sem dados ainda…"; return; }
+        el.innerHTML = "<ol>" + data.top.map(r => (
+          `<li><strong>${r.stdId}</strong> — Pontos: ${r.score} · Precisão: ${r.accuracy_percent}% · T: ${r.time_spent}s</li>`
+        )).join("") + "</ol>";
+      } catch (e) { /* noop */ }
+    }
+
+    function onDragStart(e) { e.dataTransfer.setData('text/plain', e.target.dataset.universe + '|' + e.target.textContent); }
+    function onDropFactory(targetUniverse) {
+      return function(e) {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('text/plain');
+        const parts = data.split('|');
+        const u = parts[0]; const name = parts.slice(1).join('|');
+        const el = Array.from(document.querySelectorAll('.hero')).find(h => h.textContent === name);
+        if (!el) return;
+        attempts++;
+        if (u === targetUniverse) {
+          correct++; el.classList.add('ok'); el.classList.remove('err'); zones[targetUniverse].appendChild(el);
+        } else {
+          wrong++;
+          if (targetUniverse === "Marvel") confusedMarvel++; else confusedDC++;
+          el.classList.add('err'); el.classList.remove('ok');
+          (targetUniverse === 'Marvel' ? zones['DC'] : zones['Marvel']).appendChild(el);
+        }
+        updateMetrics();
+        refreshScoreboard();
+      };
+    }
+    function onDragOver(e) { e.preventDefault(); }
+
+    document.querySelectorAll('.hero').forEach(h => h.addEventListener('dragstart', onDragStart));
+    zones['Marvel'].addEventListener('drop', onDropFactory('Marvel'));
+    zones['Marvel'].addEventListener('dragover', onDragOver);
+    zones['DC'].addEventListener('drop', onDropFactory('DC'));
+    zones['DC'].addEventListener('dragover', onDragOver);
+
+    if (hintBtn && hintBox) {
+      hintBtn.addEventListener('click', () => { hintBox.style.display = hintBox.style.display === 'none' ? 'block' : 'none'; });
+    }
+    resetBtn.addEventListener('click', () => {
+      resets++;
+      [...document.querySelectorAll('.hero')].forEach(h => { h.classList.remove('ok','err'); pool.appendChild(h); });
+      correct = wrong = attempts = confusedMarvel = confusedDC = 0;
+      updateMetrics();
+      refreshScoreboard();
+    });
+
+    setInterval(refreshScoreboard, 5000);
+    updateMetrics();
+    refreshScoreboard();
+  </script>
+</body>
+</html>

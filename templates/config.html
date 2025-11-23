@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ APP_NAME }} · Config</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg">
+  <div class="wrap">
+    <div class="title">
+      <h1 class="m0">{{ APP_NAME }}</h1>
+      <span class="badge">Configuração</span>
+    </div>
+    <p class="muted">Tela de Configuração da actividade - Inven!RA</p>
+
+    <div class="card">
+      <div class="grid">
+        <div class="full">
+          <label>Título</label>
+          <input type="text" name="title" value="{{ APP_NAME }}">
+        </div>
+        <div class="full">
+          <label>Descrição</label>
+          <textarea name="description" rows="3">Arrasta cada herói para o universo correto (Marvel ou DC).</textarea>
+        </div>
+        <div>
+          <label>Shuffle (baralhar)</label>
+          <select name="shuffle">
+            <option value="true" selected>Sim</option>
+            <option value="false">Não</option>
+          </select>
+        </div>
+        <div>
+          <label>Mostrar dicas</label>
+          <select name="enable_hints">
+            <option value="true" selected>Sim</option>
+            <option value="false">Não</option>
+          </select>
+        </div>
+        <div class="full">
+          <fieldset>
+            <legend>Lista de heróis (heroes[i][name], heroes[i][universe])</legend>
+            <!-- DC (8) -->
+            <input type="text" name="heroes[0][name]" value="Batman">
+            <input type="text" name="heroes[0][universe]" value="DC">
+            <input type="text" name="heroes[1][name]" value="Wonder Woman">
+            <input type="text" name="heroes[1][universe]" value="DC">
+            <input type="text" name="heroes[2][name]" value="Flash">
+            <input type="text" name="heroes[2][universe]" value="DC">
+            <input type="text" name="heroes[3][name]" value="Superman">
+            <input type="text" name="heroes[3][universe]" value="DC">
+            <input type="text" name="heroes[4][name]" value="Aquaman">
+            <input type="text" name="heroes[4][universe]" value="DC">
+            <input type="text" name="heroes[5][name]" value="Green Lantern">
+            <input type="text" name="heroes[5][universe]" value="DC">
+            <input type="text" name="heroes[6][name]" value="Cyborg">
+            <input type="text" name="heroes[6][universe]" value="DC">
+            <input type="text" name="heroes[7][name]" value="Green Arrow">
+            <input type="text" name="heroes[7][universe]" value="DC">
+            <!-- Marvel (8) -->
+            <input type="text" name="heroes[8][name]" value="Iron Man">
+            <input type="text" name="heroes[8][universe]" value="Marvel">
+            <input type="text" name="heroes[9][name]" value="Spider-Man">
+            <input type="text" name="heroes[9][universe]" value="Marvel">
+            <input type="text" name="heroes[10][name]" value="Thor">
+            <input type="text" name="heroes[10][universe]" value="Marvel">
+            <input type="text" name="heroes[11][name]" value="Captain America">
+            <input type="text" name="heroes[11][universe]" value="Marvel">
+            <input type="text" name="heroes[12][name]" value="Black Panther">
+            <input type="text" name="heroes[12][universe]" value="Marvel">
+            <input type="text" name="heroes[13][name]" value="Doctor Strange">
+            <input type="text" name="heroes[13][universe]" value="Marvel">
+            <input type="text" name="heroes[14][name]" value="Hulk">
+            <input type="text" name="heroes[14][universe]" value="Marvel">
+            <input type="text" name="heroes[15][name]" value="Black Widow">
+            <input type="text" name="heroes[15][universe]" value="Marvel">
+          </fieldset>
+        </div>
+        <input type="hidden" name="activityID" value="multiverse-demo-001">
+      </div>
+    </div>
+  </div>
+</body>
+</html>
